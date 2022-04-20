@@ -16,8 +16,8 @@ public record TweetItem
     public string Title { get; set; }
 
     [JsonPropertyName("created_at")]
-    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }= DateTimeOffset.UtcNow;
 
     [JsonPropertyName("updated_at")]
-    public DateTimeOffset UpdatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }= DateTimeOffset.UtcNow;
 }
