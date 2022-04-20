@@ -9,7 +9,7 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 // Add services to the container.
 builder.Services.AddTransient<IUserRepository, UserRepository>();
-// builder.Services.AddTransient<ICommentRepository, CommentRepository>();
+builder.Services.AddTransient<ICommentRepository, CommentRepository>();
 builder.Services.AddTransient<ITweetRepository, TweetRepository>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
