@@ -16,6 +16,13 @@ public record CreateTweetDto
     [MinLength(3)]
     [MaxLength(50)]
     public string Title { get; set; }
+
+    [JsonPropertyName("created_at")]
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.Now;
+
+    [JsonPropertyName("updated_at")]
+
+    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.Now;
 }
 public record TweetUpdateDto
 {

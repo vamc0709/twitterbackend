@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Twitter.DTOs;
@@ -25,6 +26,10 @@ public class UserController : ControllerBase
         _user = user;
         _config = config;
     }
+     private long GetUserIdFromClaims(IEnumerable<Claim> claims)
+    {
+        return Convert.ToInt32(claims.Where(x => x.Type == TwitterConstants.UserId).First().Value);
+    }
 
     [HttpPost("login")]
     public async Task<ActionResult<UserLoginResDTO>> Login(
@@ -48,6 +53,7 @@ public class UserController : ControllerBase
             {
                 UserId = existingUser.UserId,
                 Email = existingUser.Email,
+                Username = existingUser.Username,
                 Token = token,
             };
             return Ok(res);
@@ -81,6 +87,7 @@ public class UserController : ControllerBase
         {
             new Claim(TwitterConstants.UserId, user.UserId.ToString()),
             new Claim(TwitterConstants.Username, user.Username),
+            // new Claim(TwitterConstants.Email, user.Email),
         };
 
         var token = new JwtSecurityToken(_config["Jwt:Issuer"],
@@ -110,27 +117,54 @@ public class UserController : ControllerBase
     }
 
 
-    [HttpPut("{user_id}")]
 
+    // public async Task<ActionResult> UpdateUser([FromRoute] long user_id,
+    // [FromBody] UserUpdateDto Data)
+    // {
+    //     var existing = await _user.GetById(user_id);
+    //     if (existing is null)
+    //         return NotFound("No user found with given id");
+
+    //     var toUpdateUser = existing with
+    //     {
+    //         Email = Data.Email?.Trim()?.ToLower() ?? existing.Email,
+    //         Password = Data.Password?.Trim()?.ToLower() ?? existing.Password,
+
+    //     };
+
+    //     var didUpdate = await _user.Update(toUpdateUser);
+
+    //     if (!didUpdate)
+    //         return StatusCode(StatusCodes.Status500InternalServerError, "Could not update user");
+
+    //     return NoContent();
+    // }
+
+    [HttpPut("{user_id}")]
+    [Authorize]
     public async Task<ActionResult> UpdateUser([FromRoute] long user_id,
     [FromBody] UserUpdateDto Data)
     {
-        var existing = await _user.GetById(user_id);
-        if (existing is null)
-            return NotFound("No user found with given id");
+        var userId = GetUserIdFromClaims(User.Claims);
 
-        var toUpdateUser = existing with
+        var existingItem = await _user.GetById(user_id);
+
+        if (existingItem is null)
+            return NotFound();
+
+        if (existingItem.UserId != userId)
+            return StatusCode(403, "You cannot update other users");
+
+        var toUpdateItem = existingItem with
         {
-            Email = Data.Email?.Trim()?.ToLower() ?? existing.Email,
-            Password = Data.Password?.Trim()?.ToLower() ?? existing.Password,
+            // Username = Data.Username is null ? existingItem.Username : Data.Username.Trim(),
+            Username = Data.Username is null ? existingItem.Username : Data.Username.Trim(),
 
         };
 
-        var didUpdate = await _user.Update(toUpdateUser);
-
-        if (!didUpdate)
-            return StatusCode(StatusCodes.Status500InternalServerError, "Could not update user");
+        await _user.Update(toUpdateItem);
 
         return NoContent();
     }
+
 }

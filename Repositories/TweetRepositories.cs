@@ -66,7 +66,7 @@ public class TweetRepository : BaseRepository, ITweetRepository
 
     public async Task<bool> Update(TweetItem Item)
     {
-        var query = $@"UPDATE ""{TableNames.tweet}"" SET title = @Title WHERE tweet_id = TweetId";
+        var query = $@"UPDATE ""{TableNames.tweet}"" SET title = @Title WHERE tweet_id = @TweetId";
 
         using (var con = NewConnection)
             return await con.ExecuteAsync(query, Item) > 0;
