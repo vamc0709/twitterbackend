@@ -11,6 +11,7 @@ public interface ICommentRepository
     Task Delete(long CommentId);
     Task<List<CommentItem>> GetAllComments();
     Task<CommentItem> GetById(long CommentId);
+    Task<List<CommentItem>> GetByTweetId(long tweet_id);
 }
 public class CommentRepository : BaseRepository, ICommentRepository
 {
@@ -50,6 +51,14 @@ public class CommentRepository : BaseRepository, ICommentRepository
 
         using (var con = NewConnection)
             return await con.QuerySingleOrDefaultAsync<CommentItem>(query, new { CommentId });
+    }
+
+    public async Task<List<CommentItem>> GetByTweetId(long tweet_id)
+    {
+        var query = $@"SELECT * FROM {TableNames.comment} WHERE tweet_id = @tweet_id";
+
+        using (var con = NewConnection)
+            return (await con.QueryAsync<CommentItem>(query, new{ tweet_id })).AsList();
     }
 
     public async Task<bool> Update(CommentItem Item)

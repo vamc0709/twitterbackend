@@ -34,10 +34,10 @@ public class CommentController : ControllerBase
         var allComments = await _comment.GetAllComments();
         return Ok(allComments);
     }
-    [HttpGet("{CommentId}")]
-    public async Task<ActionResult<CommentItem>> GetById(long CommentId)
+    [HttpGet("{tweet_id}")]
+    public async Task<ActionResult<CommentItem>> GetByTweetId(long tweet_id)
     {
-        var comment = await _comment.GetById(CommentId);
+        var comment = await _comment.GetByTweetId(tweet_id);
         return Ok(comment);
     }
     [HttpPost]
