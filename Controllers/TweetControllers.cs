@@ -33,10 +33,10 @@ public class TweetController : ControllerBase
         var allTweets = await _tweet.GetAllTweets();
         return Ok(allTweets);
     }
-    [HttpGet("{TweetId}")]
-    public async Task<ActionResult<TweetItem>> GetById(long TweetId)
+    [HttpGet("{id}")]
+    public async Task<ActionResult<TweetItem>> GetById([FromRoute]long id)
     {
-        var tweet = await _tweet.GetById(TweetId);
+        var tweet = await _tweet.GetById(id);
         return Ok(tweet);
     }
     [HttpPost]
@@ -61,12 +61,12 @@ public class TweetController : ControllerBase
 
     }
 
-    [HttpPut("{TweetId}")]
-    public async Task<ActionResult<TweetItem>> Update([FromRoute] long TweetId,
+    [HttpPut("{id}")]
+    public async Task<ActionResult<TweetItem>> Update([FromRoute] long id,
     [FromBody] TweetUpdateDto Data)
     {
         var userId = GetUserIdFromClaims(User.Claims);
-        var existingItem = await _tweet.GetById(TweetId);
+        var existingItem = await _tweet.GetById(id);
 
         if (existingItem is null)
             return NotFound();
@@ -76,6 +76,7 @@ public class TweetController : ControllerBase
 
         var toUpdateItem = existingItem with
         {
+            TweetId =existingItem.TweetId,
             Title = Data.Title is null ? existingItem.Title : Data.Title.Trim(),
 
         };
