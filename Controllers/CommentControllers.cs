@@ -29,17 +29,19 @@ public class CommentController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<CommentItem>>> GetAllComments()
+    public async Task<ActionResult<List<CommentItem>>> GetAllComments([FromQuery] CommentParameters commentParameters)
     {
-        var allComments = await _comment.GetAllComments();
+        var allComments = await _comment.GetAllComments(commentParameters);
         return Ok(allComments);
     }
+
     [HttpGet("{tweet_id}")]
     public async Task<ActionResult<CommentItem>> GetByTweetId(long tweet_id)
     {
         var comment = await _comment.GetByTweetId(tweet_id);
         return Ok(comment);
     }
+
     [HttpPost]
 
     public async Task<ActionResult<CommentItem>> Create([FromBody] CreateCommentDto Data)

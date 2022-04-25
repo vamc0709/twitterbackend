@@ -28,17 +28,20 @@ public class TweetController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<TweetItem>>> GetAllTweets()
+    public async Task<ActionResult<List<TweetItem>>> GetAllTweets([FromQuery] TweetParameters tweetParameters)
     {
-        var allTweets = await _tweet.GetAllTweets();
+        var allTweets = await _tweet.GetAllTweets(tweetParameters);
         return Ok(allTweets);
     }
+    
+    
     [HttpGet("{id}")]
     public async Task<ActionResult<TweetItem>> GetById([FromRoute]long id)
     {
         var tweet = await _tweet.GetById(id);
         return Ok(tweet);
     }
+    
     [HttpPost]
     public async Task<ActionResult<TweetItem>> Create([FromBody] CreateTweetDto Data)
 

@@ -9,7 +9,7 @@ public interface ICommentRepository
     Task<CommentItem> Create(CommentItem Item);
     Task<bool> Update(CommentItem Item);
     Task Delete(long CommentId);
-    Task<List<CommentItem>> GetAllComments();
+    Task<List<CommentItem>> GetAllComments(CommentParameters commentParameters);
     Task<CommentItem> GetById(long CommentId);
     Task<List<CommentItem>> GetByTweetId(long tweet_id);
 }
@@ -37,12 +37,15 @@ public class CommentRepository : BaseRepository, ICommentRepository
             await con.ExecuteAsync(query, new { CommentId });
     }
 
-    public async Task<List<CommentItem>> GetAllComments()
+    public async Task<List<CommentItem>> GetAllComments(CommentParameters commentParameters)
     {
-        var query = $@"SELECT * FROM {TableNames.comment}";
+        var query = $@"SELECT * FROM ""{TableNames.comment}"" LIMIT @Limit OFFSET @Offset";
+        List<CommentItem> res;
 
         using (var con = NewConnection)
-            return (await con.QueryAsync<CommentItem>(query)).AsList();
+        res = (await con.QueryAsync<CommentItem>(query,new {Limit = commentParameters.PageSize,
+               Offset = (commentParameters.PageNumber -1) * commentParameters.PageSize})).AsList();
+        return res;
     }
 
     public async Task<CommentItem> GetById(long CommentId)

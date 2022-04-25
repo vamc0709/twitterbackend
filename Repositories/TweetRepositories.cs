@@ -9,7 +9,7 @@ public interface ITweetRepository
     Task<TweetItem> Create(TweetItem Item);
     Task<bool> Update(TweetItem Item);
     Task<bool> Delete(long TweetId);
-    Task<List<TweetItem>> GetAllTweets();
+    Task<List<TweetItem>> GetAllTweets(TweetParameters tweetParameters);
     Task<TweetItem> GetById(long TweetId);
     Task<List<TweetItem>> GetTweetsByUserId(long UserId);
 
@@ -41,14 +41,16 @@ public class TweetRepository : BaseRepository, ITweetRepository
             return await con.ExecuteAsync(query, new { TweetId }) > 0;
     }
 
-    public async Task<List<TweetItem>> GetAllTweets()
+    public async Task<List<TweetItem>> GetAllTweets(TweetParameters tweetParameters)
     {
-       var query = $@"SELECT * FROM ""{TableNames.tweet}""";
+       var query = $@"SELECT * FROM ""{TableNames.tweet}"" LIMIT @Limit OFFSET @Offset";
+        List <TweetItem> res;
             using (var con = NewConnection)
-                return (await con.QueryAsync<TweetItem>(query)).AsList();
+               res = (await con.QueryAsync<TweetItem>(query,new {Limit = tweetParameters.PageSize,
+               Offset = (tweetParameters.PageNumber -1) * tweetParameters.PageSize})).AsList();
+        return res;
     }
 
-    
     public async Task<TweetItem> GetById(long TweetId)
     {
         var query = $@"SELECT * FROM ""{TableNames.tweet}"" WHERE tweet_id = @TweetId";
