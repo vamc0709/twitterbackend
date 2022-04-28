@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Twitter.DTOs;
 using Twitter.Models;
 using Twitter.Repositories;
@@ -15,12 +16,14 @@ public class CommentController : ControllerBase
 {
     private readonly ILogger<CommentController> _logger;
     private readonly ICommentRepository _comment;
+    private readonly IMemoryCache _cache;
 
-    public CommentController(ILogger<CommentController> logger,
+    public CommentController(ILogger<CommentController> logger, IMemoryCache Cache,
     ICommentRepository comment)
     {
         _logger = logger;
         _comment = comment;
+        _cache = Cache;
     }
 
      private long GetUserIdFromClaims(IEnumerable<Claim> claims)
@@ -32,6 +35,12 @@ public class CommentController : ControllerBase
     public async Task<ActionResult<List<CommentItem>>> GetAllComments([FromQuery] CommentParameters commentParameters)
     {
         var allComments = await _comment.GetAllComments(commentParameters);
+         var commentCache = _cache.Get<List<CommentItem>>(key: "tweets");
+        if (commentCache is null)
+        {
+            commentCache = await _comment.GetAllComments(commentParameters);
+            _cache.Set(key: "tweets", commentCache, TimeSpan.FromMinutes(value: 1));
+        }
         return Ok(allComments);
     }
 

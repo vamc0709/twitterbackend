@@ -11,6 +11,8 @@ public interface IUserRepository
     Task<bool> Update(User Item);
 
     Task<User> GetById(long UserId);
+    // Task Getall();
+    Task<List<User>> GetAll();
 }
 public class UserRepository : BaseRepository, IUserRepository
 {
@@ -68,5 +70,17 @@ public class UserRepository : BaseRepository, IUserRepository
             {
                 UserId = UserId
             });
+    }
+
+    public async Task<List<User>> GetAll()
+    {
+        var query = $@"SELECT * FROM ""{TableNames.users}""";
+        List<User> res;
+        using (var con = NewConnection)
+        {
+            res = (await con.QueryAsync<User>(query)).AsList();
+        }
+         return res;
+
     }
 }

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using Twitter.DTOs;
 using Twitter.Models;
@@ -18,13 +19,16 @@ public class UserController : ControllerBase
     private readonly ILogger<UserController> _logger;
     private readonly IUserRepository _user;
     private readonly IConfiguration _config;
+    private readonly IMemoryCache _cache;
 
-    public UserController(ILogger<UserController> logger,
+    public UserController(ILogger<UserController> logger,IMemoryCache Cache,
     IUserRepository user, IConfiguration config)
     {
         _logger = logger;
         _user = user;
         _config = config;
+        _cache = Cache;
+
     }
      private long GetUserIdFromClaims(IEnumerable<Claim> claims)
     {
@@ -36,24 +40,31 @@ public class UserController : ControllerBase
         [FromBody] UserLoginDTO Data
     )
     {
-        var existingUser = await _user.GetByEmail(Data.Email);
-
-        if (existingUser is null)
+        var userCache = _cache.Get<User>(key: "user");
+        if (userCache is null)
+        {
+            userCache = await _user.GetByEmail(Data.Email);
+        }
+        if (userCache is null)
             return NotFound();
+        // var existingUser = await _user.GetByEmail(Data.Email);
+
+        // if (existingUser is null)
+        //     return NotFound();
         try
         {
-            bool passwordVerify = BCrypt.Net.BCrypt.Verify(Data.Password, existingUser.Password);
+            bool passwordVerify = BCrypt.Net.BCrypt.Verify(Data.Password, userCache.Password);
 
             if (!passwordVerify)
                 return BadRequest("Incorrect password");
 
-            var token = Generate(existingUser);
+            var token = Generate(userCache);
 
             var res = new UserLoginResDTO
             {
-                UserId = existingUser.UserId,
-                Email = existingUser.Email,
-                Username = existingUser.Username,
+                UserId = userCache.UserId,
+                Email = userCache.Email,
+                Username = userCache.Username,
                 Token = token,
             };
             return Ok(res);
@@ -63,19 +74,6 @@ public class UserController : ControllerBase
             Console.WriteLine(" error while verifying password: " + e.ToString());
             return Ok(" error while verifying password: " + e.ToString());
         }
-        // if (existingUser.Password != Data.Password)
-        //     return BadRequest("Incorrect password");
-
-        // var token = Generate(existingUser);
-
-        // var res = new UserLoginResDTO
-        // {
-        //     UserId = existingUser.UserId,
-        //     Email = existingUser.Email,
-        //     Token = token,
-        // };
-
-        // return Ok(res);
     }
 
     private string Generate(User user)
@@ -115,30 +113,26 @@ public class UserController : ControllerBase
 
         return StatusCode(StatusCodes.Status201Created, res);
     }
+    [HttpGet]
+    
+    public async Task<ActionResult<List<User>>> GetAll()
+    {
+        var allUsers = await _user.GetAll();
+        return Ok(allUsers);
+    }
+    
+
+    [HttpGet("{user_id}")]
+    
+    public async Task<ActionResult<User>> GetById(long user_id)
+    {
+        var user = await _user.GetById(user_id);
+        if (user is null)
+            return NotFound();
+        return Ok(user);
+    }
 
 
-
-    // public async Task<ActionResult> UpdateUser([FromRoute] long user_id,
-    // [FromBody] UserUpdateDto Data)
-    // {
-    //     var existing = await _user.GetById(user_id);
-    //     if (existing is null)
-    //         return NotFound("No user found with given id");
-
-    //     var toUpdateUser = existing with
-    //     {
-    //         Email = Data.Email?.Trim()?.ToLower() ?? existing.Email,
-    //         Password = Data.Password?.Trim()?.ToLower() ?? existing.Password,
-
-    //     };
-
-    //     var didUpdate = await _user.Update(toUpdateUser);
-
-    //     if (!didUpdate)
-    //         return StatusCode(StatusCodes.Status500InternalServerError, "Could not update user");
-
-    //     return NoContent();
-    // }
 
     [HttpPut("{user_id}")]
     [Authorize]

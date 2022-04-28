@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Twitter.DTOs;
 using Twitter.Models;
 using Twitter.Repositories;
@@ -15,12 +16,14 @@ public class TweetController : ControllerBase
 {
     private readonly ILogger<TweetController> _logger;
     private readonly ITweetRepository _tweet;
+    private readonly IMemoryCache _cache;
 
-    public TweetController(ILogger<TweetController> logger,
+    public TweetController(ILogger<TweetController> logger,IMemoryCache Cache,
     ITweetRepository Tweet)
     {
         _logger = logger;
         _tweet = Tweet;
+        _cache = Cache;
     }
     private long GetUserIdFromClaims(IEnumerable<Claim> claims)
     {
@@ -31,6 +34,34 @@ public class TweetController : ControllerBase
     public async Task<ActionResult<List<TweetItem>>> GetAllTweets([FromQuery] TweetParameters tweetParameters)
     {
         var allTweets = await _tweet.GetAllTweets(tweetParameters);
+
+
+         var tweetCache = _cache.Get<List<TweetItem>>(key: "tweets");
+        if (tweetCache is null)
+        {
+            tweetCache = await _tweet.GetAllTweets(tweetParameters);
+            _cache.Set(key: "tweets", tweetCache, TimeSpan.FromMinutes(value: 1));
+        }
+
+        // var cacheKey = "tweetList";
+        // //checks if cache entries exists
+        // if (!_cache.TryGetValue(cacheKey, out List<TweetItem> tweetList))
+        // {
+        //     //calling the server
+        //      tweetList = await _tweet.ToListAsync();
+
+        //     //setting up cache options
+        //     var cacheExpiryOptions = new MemoryCacheEntryOptions
+        //     {
+        //         AbsoluteExpiration = DateTime.Now.AddMinutes(5),
+        //         Priority = CacheItemPriority.High,
+        //         SlidingExpiration = TimeSpan.FromMinutes(2)
+        //     };
+        //     //setting cache entries
+        //     _cache.Set(cacheKey, tweetList, cacheExpiryOptions);
+        // }
+
+        // return Ok(allTweets);
         return Ok(allTweets);
     }
     

@@ -12,8 +12,8 @@ public interface ITweetRepository
     Task<List<TweetItem>> GetAllTweets(TweetParameters tweetParameters);
     Task<TweetItem> GetById(long TweetId);
     Task<List<TweetItem>> GetTweetsByUserId(long UserId);
-
-
+    // Task<List<TweetItem>> GetAll(TweetParameters tweetParameters);
+    // Task<List<TweetItem>> ToListAsync();
 }
 public class TweetRepository : BaseRepository, ITweetRepository
 {
@@ -65,6 +65,17 @@ public class TweetRepository : BaseRepository, ITweetRepository
         using (var con = NewConnection)
             return (await con.QueryAsync<TweetItem>(query, new { UserId })).AsList();
     }
+
+    // public async Task<List<TweetItem>> ToListAsync()
+    // {
+    //     var query = $@"SELECT * FROM ""{TableNames.tweet}""";
+
+    //     List<TweetItem> res;
+    //     using (var con = NewConnection)
+    //         res = (await con.QueryAsync<TweetItem>(query)).AsList();
+
+    //     return res;
+    // }
 
     public async Task<bool> Update(TweetItem Item)
     {
